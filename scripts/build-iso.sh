@@ -14,25 +14,21 @@ echo "================================================="
 echo "  Building DEROX OS 2.0 Kernel & Bootable ISO... "
 echo "================================================="
 
-# 1. تحميل وتجميع نواة لينكس (Linux Kernel v6.6)
-echo "[1/4] Downloading and compiling Linux Kernel v6.6..."
-mkdir -p "$BUILD_DIR/src"
-cd "$BUILD_DIR/src"
+# 1. تجهيز مجلدات الـ ISO ونواة لينكس
+echo "[1/4] Preparing Linux Kernel..."
+mkdir -p "$ISO_DIR/boot/grub/themes"
 
-curl -fsSLk "https://github.com" -o linux-6.6.tar.gz
+KERNEL_IMG=$(ls -v /boot/vmlinuz-* 2>/dev/null | tail -n 1)
+if [ -z "$KERNEL_IMG" ]; then
+  echo "[Error] No Linux kernel found in /boot."
+  exit 1
+fi
 
-rm -rf linux-6.6
-tar -xzf linux-6.6.tar.gz
-cd linux-6.6
-
-make defconfig >/dev/null
-make -j$(nproc) bzImage >/dev/null
+sudo cp "$KERNEL_IMG" "$ISO_DIR/boot/vmlinuz-derox"
+sudo chmod 644 "$ISO_DIR/boot/vmlinuz-derox"
 
 # 2. ضغط نظام الملفات الجذري إلى initramfs
 echo "[2/4] Packaging RootFS into initramfs.img..."
-mkdir -p "$ISO_DIR/boot/grub/themes"
-cp arch/x86/boot/bzImage "$ISO_DIR/boot/vmlinuz-derox"
-
 cd "$ROOTFS_DIR"
 find . -print0 | cpio --null -ov --format=newc 2>/dev/null | gzip -9 > "$ISO_DIR/boot/initramfs.img"
 
@@ -68,7 +64,7 @@ EOF
 # 4. توليد ملف الـ ISO القابل للإقلاع
 echo "[4/4] Generating bootable ISO image..."
 mkdir -p "$REPO_ROOT/dist"
-grub-mkrescue -o "$ISO_OUTPUT" "$ISO_DIR" >/dev/null 2>&1
+grub-mkrescue -o "$ISO_OUTPUT" "$ISO_DIR"
 
 echo "================================================="
 echo "  ISO Build Complete: $ISO_OUTPUT                "
