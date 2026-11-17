@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+##!/usr/bin/env bash
 # DEROX OS 2.0 - Kernel & Bootable ISO Builder
 # License: MIT
 
@@ -8,8 +8,7 @@ REPO_ROOT="$(pwd)"
 BUILD_DIR="${REPO_ROOT}/build/derox-2.0"
 ROOTFS_DIR="${BUILD_DIR}/rootfs"
 ISO_DIR="${BUILD_DIR}/iso"
-KERNEL_VERSION="6.6.60"
-KERNEL_MAJOR="v6.x"
+KERNEL_TAG="v6.6"
 ISO_OUTPUT="${REPO_ROOT}/dist/derox-os-2.0-x86_64.iso"
 
 echo "================================================="
@@ -22,18 +21,18 @@ if [ ! -d "${ROOTFS_DIR}" ]; then
   exit 1
 fi
 
-# 1. تحميل وتجميع نواة لينكس (Linux Kernel)
-echo "[1/4] Downloading and compiling Linux Kernel ${KERNEL_VERSION}..."
+# 1. تحميل وتجميع نواة لينكس (Linux Kernel) من GitHub Mirror
+echo "[1/4] Downloading and compiling Linux Kernel ${KERNEL_TAG}..."
 mkdir -p "${BUILD_DIR}/src"
 cd "${BUILD_DIR}/src"
 
-if [ ! -f "linux-${KERNEL_VERSION}.tar.xz" ]; then
-  wget -q "https://kernel.org{KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.xz"
+if [ ! -f "linux-${KERNEL_TAG}.tar.gz" ]; then
+  curl -fsSLk "https://github.com{KERNEL_TAG}.tar.gz" -o "linux-${KERNEL_TAG}.tar.gz"
 fi
 
-rm -rf "linux-${KERNEL_VERSION}"
-tar -xf "linux-${KERNEL_VERSION}.tar.xz"
-cd "linux-${KERNEL_VERSION}"
+rm -rf "linux-${KERNEL_TAG#v}"
+tar -xzf "linux-${KERNEL_TAG}.tar.gz"
+cd "linux-${KERNEL_TAG#v}"
 
 make defconfig >/dev/null
 make -j"$(nproc)" bzImage >/dev/null
