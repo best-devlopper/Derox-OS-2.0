@@ -1,9 +1,12 @@
-name: Build DEROX OS 2.0 ISO
+name: Build & Release DEROX OS 2.0 ISO
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-iso:
@@ -16,7 +19,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc wget curl busybox-static cpio gzip grub-pc-bin grub-efi-amd64-bin xorriso mtools
+          sudo apt-get install -y linux-image-generic busybox-static cpio gzip grub-pc-bin grub-efi-amd64-bin xorriso mtools
 
       - name: Normalize line endings and permissions
         run: |
@@ -31,8 +34,27 @@ jobs:
         run: |
           bash ./scripts/build-iso.sh
 
+      - name: Generate SHA256 Checksum
+        run: |
+          cd dist
+          sha256sum derox-os-2.0-x86_64.iso > derox-os-2.0-x86_64.iso.sha256
+
       - name: Upload DEROX OS 2.0 ISO Artifact
         uses: actions/upload-artifact@v4
         with:
           name: derox-os-2.0-iso
           path: dist/derox-os-2.0-x86_64.iso
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.0-alpha
+          name: DEROX OS 2.0 Alpha (Bootable ISO)
+          body: |
+            Initial independent bootable ISO prototype for **DEROX OS 2.0**.
+            - Custom DEROX OS 2.0 GRUB2 bootloader theme (`Live Session` & `Safe Mode`)
+            - Standalone Linux Kernel + BusyBox RootFS
+            - Built-in `derox` CLI command and `/etc/os-release` identity
+          files: |
+            dist/derox-os-2.0-x86_64.iso
+            dist/derox-os-2.0-x86_64.iso.sha256
