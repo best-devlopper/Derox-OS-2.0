@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!#!/usr/bin/env bash
 # DEROX OS 2.0 - Independent Root Filesystem (RootFS) Builder
 # License: MIT
 
@@ -6,7 +6,6 @@ set -e
 
 BUILD_DIR="$(pwd)/build/derox-2.0"
 ROOTFS_DIR="${BUILD_DIR}/rootfs"
-BUSYBOX_VERSION="1.36.1"
 
 echo "================================================="
 echo "  Building DEROX OS 2.0 Independent RootFS...    "
@@ -18,23 +17,23 @@ rm -rf "${ROOTFS_DIR}"
 mkdir -p "${ROOTFS_DIR}"/{bin,sbin,etc,proc,sys,dev,tmp,var,usr/{bin,sbin,lib},root,home,boot/grub/themes}
 chmod 1777 "${ROOTFS_DIR}/tmp"
 
-# 2. تحميل وبناء أدوات النظام الأساسية (BusyBox Static)
-echo "[2/5] Downloading and compiling BusyBox ${BUSYBOX_VERSION}..."
-mkdir -p "${BUILD_DIR}/src"
-cd "${BUILD_DIR}/src"
-
-if [ ! -f "busybox-${BUSYBOX_VERSION}.tar.bz2" ]; then
-  wget -q "https://busybox.net{BUSYBOX_VERSION}.tar.bz2"
+# 2. تثبيت أدوات النظام الأساسية (BusyBox Static)
+echo "[2/5] Installing BusyBox static utilities into RootFS..."
+if command -v busybox >/dev/null 2>&1; then
+  cp "$(which busybox)" "${ROOTFS_DIR}/bin/busybox"
+else
+  curl -fsSLk "https://github.com" -o busybox.tar.gz
+  tar -xzf busybox.tar.gz
+  cd busybox-1_36_1
+  make defconfig >/dev/null
+  sed -i 's/# CONFIG_STATIC is not set/CONFIG_STATIC=y/' .config
+  make -j"$(nproc)" >/dev/null
+  make CONFIG_PREFIX="${ROOTFS_DIR}" install >/dev/null
+  cd ..
 fi
 
-rm -rf "busybox-${BUSYBOX_VERSION}"
-tar -xjf "busybox-${BUSYBOX_VERSION}.tar.bz2"
-cd "busybox-${BUSYBOX_VERSION}"
-
-make defconfig >/dev/null
-sed -i 's/# CONFIG_STATIC is not set/CONFIG_STATIC=y/' .config
-make -j"$(nproc)" >/dev/null
-make CONFIG_PREFIX="${ROOTFS_DIR}" install >/dev/null
+chmod +x "${ROOTFS_DIR}/bin/busybox"
+"${ROOTFS_DIR}/bin/busybox" --install -s "${ROOTFS_DIR}/bin"
 
 # 3. إنشاء ملفات الهوية والنظام الأساسية
 echo "[3/5] Configuring DEROX OS 2.0 system identity..."
