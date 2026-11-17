@@ -1,0 +1,33 @@
+name: Build DEROX OS 2.0 Assets
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify theme files
+        run: |
+          test -f grub-theme-derox2/theme.txt
+          test -f grub-theme-derox2/install.sh
+          chmod +x grub-theme-derox2/install.sh
+
+      - name: Package DEROX 2.0 GRUB Theme
+        run: |
+          mkdir -p dist
+          tar -czvf dist/derox-os-2.0-grub-theme.tar.gz grub-theme-derox2/
+
+      - name: Upload Theme Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: derox-2.0-grub-theme
+          path: dist/derox-os-2.0-grub-theme.tar.gz
