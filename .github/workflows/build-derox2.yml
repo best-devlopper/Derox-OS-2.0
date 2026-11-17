@@ -16,19 +16,20 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc wget cpio gzip grub-pc-bin grub-efi-amd64-bin xorriso mtools
+          sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc wget curl busybox-static cpio gzip grub-pc-bin grub-efi-amd64-bin xorriso mtools
 
-      - name: Prepare scripts
+      - name: Normalize line endings and permissions
         run: |
+          sed -i 's/\r$//' grub-theme-derox2/install.sh scripts/*.sh
           chmod +x grub-theme-derox2/install.sh scripts/*.sh
 
       - name: Build DEROX 2.0 RootFS
         run: |
-          ./scripts/build-rootfs.sh
+          bash ./scripts/build-rootfs.sh
 
       - name: Build Linux Kernel & Bootable ISO
         run: |
-          ./scripts/build-iso.sh
+          bash ./scripts/build-iso.sh
 
       - name: Upload DEROX OS 2.0 ISO Artifact
         uses: actions/upload-artifact@v4
